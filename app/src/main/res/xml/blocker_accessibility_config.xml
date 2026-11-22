@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuration for WorkerAnt's doomscroll blocker.
+  packageNames limits the service to the apps it can block, so it never sees anything else on your phone.
+  If you add a new BlockTarget in BlockTarget.kt, add its package name here too.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/blocker_service_description"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewScrolled"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:notificationTimeout="300"
+    android:packageNames="com.instagram.android,com.google.android.youtube,com.zhiliaoapp.musically,com.ss.android.ugc.trill" />
