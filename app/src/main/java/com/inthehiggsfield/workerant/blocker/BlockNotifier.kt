@@ -25,7 +25,7 @@ object BlockNotifier {
             PackageManager.PERMISSION_GRANTED
 
     /** Returns false if notifications aren't allowed (the service falls back to a toast). */
-    fun notifyBlocked(context: Context, target: BlockTarget, countToday: Int): Boolean {
+    fun notifyBlocked(context: Context, target: BlockTarget, countToday: Int, duringTask: String? = null): Boolean {
         if (!canNotify(context)) return false
         ensureChannel(context)
 
@@ -39,7 +39,10 @@ object BlockNotifier {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_worker_ant)
             .setContentTitle("Worker Ant blocked ${target.label}")
-            .setContentText("Back to work. Blocked $times today.")
+            .setContentText(
+                if (duringTask != null) "You have \"$duringTask\" right now. Blocked $times today."
+                else "Back to work. Blocked $times today."
+            )
             .setContentIntent(openApp)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)

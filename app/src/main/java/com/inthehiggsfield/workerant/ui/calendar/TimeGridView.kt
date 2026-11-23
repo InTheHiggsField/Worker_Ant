@@ -1,6 +1,7 @@
 package com.inthehiggsfield.workerant.ui.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -47,6 +50,7 @@ fun TimeGridView(
     startDate: LocalDate,
     days: Int,
     events: List<AgendaItem>,
+    onEventClick: (AgendaItem) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val dates = (0 until days).map { startDate.plusDays(it.toLong()) }
@@ -78,7 +82,7 @@ fun TimeGridView(
                 Spacer(Modifier.width(GUTTER))
                 allDay.forEach { list ->
                     Column(Modifier.weight(1f).padding(horizontal = 1.dp)) {
-                        list.forEach { EventBlock(it, Modifier.fillMaxWidth().padding(vertical = 1.dp)) }
+                        list.forEach { item -> EventBlock(item, Modifier.fillMaxWidth().padding(vertical = 1.dp)) { onEventClick(item) } }
                     }
                 }
             }
@@ -106,6 +110,7 @@ fun TimeGridView(
                     date = date,
                     events = events.filter { !it.allDay && it.occursOn(date) },
                     isToday = date == today,
+                    onEventClick = onEventClick,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -114,7 +119,13 @@ fun TimeGridView(
 }
 
 @Composable
-private fun DayColumn(date: LocalDate, events: List<AgendaItem>, isToday: Boolean, modifier: Modifier) {
+private fun DayColumn(
+    date: LocalDate,
+    events: List<AgendaItem>,
+    isToday: Boolean,
+    onEventClick: (AgendaItem) -> Unit,
+    modifier: Modifier,
+) {
     val lineColor = MaterialTheme.colorScheme.outlineVariant
     val dayStart = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     val placed = remember(events) { layoutOverlaps(events) }
@@ -142,7 +153,7 @@ private fun DayColumn(date: LocalDate, events: List<AgendaItem>, isToday: Boolea
                     .width(width)
                     .height(HOUR_HEIGHT * (durationMin / 60f))
                     .padding(1.dp),
-            )
+            ) { onEventClick(p.item) }
         }
         if (isToday) {
             // Red "now" line, like Outlook
@@ -159,22 +170,27 @@ private fun DayColumn(date: LocalDate, events: List<AgendaItem>, isToday: Boolea
 }
 
 @Composable
-private fun EventBlock(item: AgendaItem, modifier: Modifier) {
+private fun EventBlock(item: AgendaItem, modifier: Modifier, onClick: () -> Unit) {
+    val background = eventColor(item)
+    // Dark text on light calendar colors, white text on dark ones.
+    val textColor = if (background.luminance() > 0.45f) Color(0xFF1A1A1A) else Color.White
     Box(
         modifier
-            .background(eventColor(item).copy(alpha = 0.9f), RoundedCornerShape(4.dp))
+            .alpha(if (item.hidden) 0.4f else 1f)
+            .background(background.copy(alpha = 0.9f), RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick)
             .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Column {
             Text(
                 item.title.ifBlank { "(No title)" },
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White,
+                color = textColor,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             item.location?.let {
-                Text(it, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f),
+                Text(it, style = MaterialTheme.typography.labelSmall, color = textColor.copy(alpha = 0.85f),
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }

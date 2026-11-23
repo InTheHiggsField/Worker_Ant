@@ -6,6 +6,18 @@ import android.provider.Settings
 import androidx.core.content.edit
 import java.time.LocalDate
 
+/** When the blocker is allowed to block. */
+enum class BlockMode {
+    /** Block the selected feeds any time they open. */
+    Always,
+    /**
+     * Reactive mode: only block while you're busy — during an Outlook calendar event
+     * (Google is skipped because that's where holiday calendars come from) or one of
+     * WorkerAnt's scheduled tasks.
+     */
+    Reactive,
+}
+
 /**
  * Blocker settings, shared between the Blocker screen (which writes them)
  * and the accessibility service (which reads them on every event).
@@ -26,6 +38,13 @@ class BlockerPrefs(context: Context) {
         prefs.edit { putInt(key, count) }
         return count
     }
+
+    var mode: BlockMode
+        get() = when (val saved = prefs.getString("mode", null)) {
+            "DuringScheduledTasks" -> BlockMode.Reactive   // name used by an earlier build
+            else -> BlockMode.entries.firstOrNull { it.name == saved } ?: BlockMode.Always
+        }
+        set(value) = prefs.edit { putString("mode", value.name) }
 
     /** Developer option: log every view ID on the screen to Logcat (tag "WorkerAntBlocker"). */
     var logViewIds: Boolean

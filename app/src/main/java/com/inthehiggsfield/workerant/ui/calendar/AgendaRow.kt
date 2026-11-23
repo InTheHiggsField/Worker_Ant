@@ -1,6 +1,7 @@
 package com.inthehiggsfield.workerant.ui.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.time.Instant
@@ -30,14 +32,17 @@ internal fun eventColor(item: AgendaItem): Color =
 
 /** One event as a list row: color bar, title, time/place, and which calendar(s) it's in. */
 @Composable
-internal fun AgendaRow(item: AgendaItem) {
+internal fun AgendaRow(item: AgendaItem, onClick: () -> Unit = {}) {
     val zone = ZoneId.systemDefault()
     val timeLabel = if (item.allDay) "All day" else
         "${Instant.ofEpochMilli(item.begin).atZone(zone).format(TIME_FMT)} – " +
             Instant.ofEpochMilli(item.end).atZone(zone).format(TIME_FMT)
-    val subtitle = listOfNotNull(timeLabel, item.location).joinToString(" · ")
+    val subtitle = listOfNotNull(timeLabel, item.location, if (item.hidden) "Hidden" else null).joinToString(" · ")
 
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth().alpha(if (item.hidden) 0.45f else 1f).clickable(onClick = onClick).padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Box(Modifier.width(4.dp).height(40.dp).background(eventColor(item), RoundedCornerShape(2.dp)))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {

@@ -6,12 +6,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -34,6 +38,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.inthehiggsfield.workerant.ui.blocker.BlockerScreen
 import com.inthehiggsfield.workerant.ui.calendar.CalendarScreen
+import com.inthehiggsfield.workerant.ui.notes.NotesScreen
 import com.inthehiggsfield.workerant.ui.settings.SettingsScreen
 import com.inthehiggsfield.workerant.ui.tasks.TasksScreen
 import com.inthehiggsfield.workerant.ui.theme.AppTheme
@@ -44,6 +49,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Re-arm task reminders and refresh the home screen widget on every launch.
+        lifecycleScope.launch { TaskChanges.onTasksChanged(this@MainActivity) }
         setContent {
             var theme by remember { mutableStateOf(ThemePrefs.load(this@MainActivity)) }
 
@@ -73,6 +80,7 @@ class MainActivity : ComponentActivity() {
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
     Tasks("tasks", "Tasks", Icons.Default.CheckCircle),
     Calendar("calendar", "Calendar", Icons.Default.DateRange),
+    Notes("notes", "Notes", Icons.Default.Edit),
     Blocker("blocker", "Blocker", Icons.Default.Lock),
     Settings("settings", "Settings", Icons.Default.Settings),
 }
@@ -109,10 +117,13 @@ fun WorkerAntApp(theme: AppTheme, onThemeChange: (AppTheme) -> Unit) {
         NavHost(
             navController = navController,
             startDestination = Tab.Tasks.route,
-            modifier = Modifier.padding(innerPadding),
+            // consumeWindowInsets: screens that add keyboard padding (Notes) don't also
+            // re-add the space already taken by the bottom bar.
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
         ) {
             composable(Tab.Tasks.route) { TasksScreen(theme = theme) }
             composable(Tab.Calendar.route) { CalendarScreen() }
+            composable(Tab.Notes.route) { NotesScreen() }
             composable(Tab.Blocker.route) { BlockerScreen() }
             composable(Tab.Settings.route) { SettingsScreen(current = theme, onSelect = onThemeChange) }
         }

@@ -19,8 +19,26 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE scheduledStart IS NULL AND isDone = 0 ORDER BY createdAt DESC")
     fun observePending(): Flow<List<Task>>
 
+    /** Unfinished tasks that have a time (used by the reactive blocker). */
+    @Query("SELECT * FROM tasks WHERE scheduledStart IS NOT NULL AND isDone = 0")
+    fun observeScheduled(): Flow<List<Task>>
+
+    /** One-time reads for the reminder scheduler and home screen widget (not live). */
+    @Query("SELECT * FROM tasks WHERE scheduledStart IS NOT NULL AND isDone = 0")
+    suspend fun scheduledNow(): List<Task>
+
+    @Query("SELECT * FROM tasks WHERE isDone = 0")
+    suspend fun openTasksNow(): List<Task>
+
+    @Query("SELECT * FROM tasks WHERE id = :id")
+    suspend fun byId(id: Long): Task?
+
+    /** Imported Canvas tasks (for syncing). */
+    @Query("SELECT * FROM tasks WHERE canvasId IS NOT NULL")
+    suspend fun canvasTasks(): List<Task>
+
     @Insert
-    suspend fun insert(task: Task)
+    suspend fun insert(task: Task): Long
 
     @Update
     suspend fun update(task: Task)

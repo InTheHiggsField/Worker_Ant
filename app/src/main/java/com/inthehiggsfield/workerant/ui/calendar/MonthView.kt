@@ -47,6 +47,7 @@ fun MonthView(
     selectedDate: LocalDate,
     events: List<AgendaItem>,
     onSelect: (LocalDate) -> Unit,
+    onEventClick: (AgendaItem) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val month = YearMonth.from(selectedDate)
@@ -105,7 +106,7 @@ fun MonthView(
             )
         } else {
             LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
-                items(selectedEvents, key = { it.key }) { AgendaRow(it) }
+                items(selectedEvents, key = { it.key }) { AgendaRow(it) { onEventClick(it) } }
             }
         }
     }

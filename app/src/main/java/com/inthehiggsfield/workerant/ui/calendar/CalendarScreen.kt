@@ -3,6 +3,7 @@ package com.inthehiggsfield.workerant.ui.calendar
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -54,6 +55,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.inthehiggsfield.workerant.blocker.BlockNotifier
 import com.inthehiggsfield.workerant.data.calendar.CalendarSource
 import com.inthehiggsfield.workerant.data.tasks.Task
 import java.time.LocalDate
@@ -101,9 +103,15 @@ fun CalendarScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CalendarContent(modifier: Modifier, viewModel: CalendarViewModel) {
+    val context = LocalContext.current
+    // Reminders need notification permission (Android 13+); ask the first time you schedule something.
+    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val pending by viewModel.pending.collectAsStateWithLifecycle()
     val events by viewModel.items.collectAsStateWithLifecycle()
     val calendars by viewModel.calendars.collectAsStateWithLifecycle()
+    val hiddenCount by viewModel.hiddenCount.collectAsStateWithLifecycle()
+    val showingHidden by viewModel.showingHidden.collectAsStateWithLifecycle()
+    var selectedEvent by remember { mutableStateOf<AgendaItem?>(null) }
 
     var mode by rememberSaveable { mutableStateOf(CalendarViewMode.Month) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
@@ -169,6 +177,24 @@ private fun CalendarContent(modifier: Modifier, viewModel: CalendarViewModel) {
             }
         }
 
+        // Hidden occurrences on this page: let you peek at them (to unhide).
+        if (hiddenCount > 0) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "$hiddenCount hidden",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { viewModel.setShowHidden(!showingHidden) }) {
+                    Text(if (showingHidden) "Hide them" else "Show")
+                }
+            }
+        }
+
         // Swipe left/right anywhere on the calendar to go to the next/previous page.
         val swipe = Modifier.pointerInput(mode) {
             var total = 0f
@@ -181,10 +207,23 @@ private fun CalendarContent(modifier: Modifier, viewModel: CalendarViewModel) {
         }
         Box(Modifier.weight(1f).fillMaxWidth().then(swipe)) {
             when (mode) {
-                CalendarViewMode.Month -> MonthView(selectedDate, events, onSelect = { selectedDate = it })
-                else -> TimeGridView(selectedDate, mode.days, events)
+                CalendarViewMode.Month -> MonthView(
+                    selectedDate, events,
+                    onSelect = { selectedDate = it },
+                    onEventClick = { selectedEvent = it },
+                )
+                else -> TimeGridView(selectedDate, mode.days, events, onEventClick = { selectedEvent = it })
             }
         }
+    }
+
+    selectedEvent?.let { item ->
+        EventDetailsDialog(
+            item = item,
+            onHide = { viewModel.hide(item) },
+            onUnhide = { viewModel.unhide(item) },
+            onDismiss = { selectedEvent = null },
+        )
     }
 
     if (showPending) {
@@ -202,9 +241,12 @@ private fun CalendarContent(modifier: Modifier, viewModel: CalendarViewModel) {
             calendars = calendars.filter { it.writable },
             initialDate = selectedDate,
             onDismiss = { scheduling = null },
-            onConfirm = { start, duration, location, calendarIds ->
-                viewModel.schedule(task, start, duration, location, calendarIds)
+            onConfirm = { start, duration, location, calendarIds, repeat, repeatUntil ->
+                viewModel.schedule(task, start, duration, location, calendarIds, repeat, repeatUntil)
                 scheduling = null
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !BlockNotifier.canNotify(context)) {
+                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             },
         )
     }

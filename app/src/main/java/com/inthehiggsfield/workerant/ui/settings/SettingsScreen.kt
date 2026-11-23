@@ -63,6 +63,15 @@ fun SettingsScreen(
         item(span = { GridItemSpan(maxLineSpan) }) {
             Text("Settings", style = MaterialTheme.typography.headlineMedium)
         }
+        item(span = { GridItemSpan(maxLineSpan) }) { RemindersCard() }
+        item(span = { GridItemSpan(maxLineSpan) }) { CanvasCard() }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Text(
+                "Theme",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
         item(span = { GridItemSpan(maxLineSpan) }) {
             CategoryFilter(selected = filter, onSelect = { filter = it })
         }

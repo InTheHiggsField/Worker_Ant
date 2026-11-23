@@ -2,4 +2,6 @@
     <string name="app_name">WorkerAnt</string>
     <string name="blocker_service_label">WorkerAnt Doomscroll Blocker</string>
     <string name="blocker_service_description">Blocks the doomscrolling features you choose in WorkerAnt (like Instagram Reels and YouTube Shorts) by pressing Back when they open. It only watches the apps you can block and never reads or stores your content.</string>
+    <string name="widget_label">Worker Ant: Up next</string>
+    <string name="widget_description">Your next scheduled tasks, plus unscheduled and Canvas to-dos.</string>
 </resources>

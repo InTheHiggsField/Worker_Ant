@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.provider.Settings
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.inthehiggsfield.workerant.blocker.BlockMode
 import com.inthehiggsfield.workerant.blocker.BlockNotifier
 import com.inthehiggsfield.workerant.blocker.BlockTarget
 import com.inthehiggsfield.workerant.blocker.BlockerPrefs
@@ -52,6 +55,7 @@ fun BlockerScreen(modifier: Modifier = Modifier) {
         }
     }
     var logIds by remember { mutableStateOf(prefs.logViewIds) }
+    var mode by remember { mutableStateOf(prefs.mode) }
     var canNotify by remember { mutableStateOf(BlockNotifier.canNotify(context)) }
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -112,6 +116,22 @@ fun BlockerScreen(modifier: Modifier = Modifier) {
             }
         }
 
+        Text("When to block", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Column {
+            ModeRow(
+                title = "Always",
+                subtitle = "Block the feeds below any time they open.",
+                selected = mode == BlockMode.Always,
+            ) { mode = BlockMode.Always; prefs.mode = BlockMode.Always }
+            ModeRow(
+                title = "Reactive: only while you're busy",
+                subtitle = "Block during your Outlook calendar events and WorkerAnt's scheduled tasks. " +
+                    "Google calendar events (including holidays), all-day events, and events you've " +
+                    "hidden don't count. Needs calendar access.",
+                selected = mode == BlockMode.Reactive,
+            ) { mode = BlockMode.Reactive; prefs.mode = BlockMode.Reactive }
+        }
+
         Text("Block", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Column {
             BlockTarget.entries.forEach { target ->
@@ -140,6 +160,20 @@ fun BlockerScreen(modifier: Modifier = Modifier) {
                 prefs.logViewIds = it
             },
         )
+    }
+}
+
+@Composable
+private fun ModeRow(title: String, subtitle: String, selected: Boolean, onSelect: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onSelect).padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = onSelect)
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

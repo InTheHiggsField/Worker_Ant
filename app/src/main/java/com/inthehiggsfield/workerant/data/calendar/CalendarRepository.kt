@@ -113,14 +113,30 @@ class CalendarRepository(context: Context) {
             result
         }
 
-    /** Creates an event and returns its id, or null if the insert failed. */
-    suspend fun insertEvent(calendarId: Long, title: String, start: Long, end: Long, location: String?): Long? =
+    /**
+     * Creates an event and returns its id, or null if the insert failed.
+     * Pass [rrule] (e.g. "FREQ=WEEKLY") to make it a repeating series; Android requires
+     * repeating events to use a DURATION instead of an end time.
+     */
+    suspend fun insertEvent(
+        calendarId: Long,
+        title: String,
+        start: Long,
+        end: Long,
+        location: String?,
+        rrule: String? = null,
+    ): Long? =
         withContext(Dispatchers.IO) {
             val values = ContentValues().apply {
                 put(Events.CALENDAR_ID, calendarId)
                 put(Events.TITLE, title)
                 put(Events.DTSTART, start)
-                put(Events.DTEND, end)
+                if (rrule == null) {
+                    put(Events.DTEND, end)
+                } else {
+                    put(Events.RRULE, rrule)
+                    put(Events.DURATION, "PT${(end - start) / 60_000}M")
+                }
                 put(Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
                 if (location != null) put(Events.EVENT_LOCATION, location)
             }
