@@ -228,18 +228,23 @@ enum class AppTheme(
 // =====================================================================
 
 @Composable
-fun AppTheme.colorScheme(systemDark: Boolean): ColorScheme {
+fun AppTheme.colorScheme(systemDark: Boolean): ColorScheme = colorSchemeFor(LocalContext.current, systemDark)
+
+/**
+ * The theme's colors without needing a Compose screen — used by the home screen widget.
+ * Styled themes ignore [dark] because they're always light or always dark.
+ */
+fun AppTheme.colorSchemeFor(context: Context, dark: Boolean): ColorScheme {
     spec?.let { return it.colors }
     return when (this) {
         AppTheme.Wallpaper ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val context = LocalContext.current
-                if (systemDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            } else if (systemDark) GrapeDark else GrapeLight
-        AppTheme.Forest -> if (systemDark) ForestDark else ForestLight
-        AppTheme.Ocean -> if (systemDark) OceanDark else OceanLight
-        AppTheme.Sunset -> if (systemDark) SunsetDark else SunsetLight
-        else -> if (systemDark) GrapeDark else GrapeLight
+                if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            } else if (dark) GrapeDark else GrapeLight
+        AppTheme.Forest -> if (dark) ForestDark else ForestLight
+        AppTheme.Ocean -> if (dark) OceanDark else OceanLight
+        AppTheme.Sunset -> if (dark) SunsetDark else SunsetLight
+        else -> if (dark) GrapeDark else GrapeLight
     }
 }
 

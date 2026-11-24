@@ -16,6 +16,7 @@ import com.inthehiggsfield.workerant.data.calendar.CalendarSource
 import com.inthehiggsfield.workerant.data.tasks.AppDatabase
 import com.inthehiggsfield.workerant.data.tasks.Task
 import com.inthehiggsfield.workerant.data.tasks.isInProgress
+import com.inthehiggsfield.workerant.widget.WorkerAntWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -48,7 +49,10 @@ class DoomscrollBlockerService : AccessibilityService() {
     /** Re-reads the calendar whenever Google/Outlook sync changes it. */
     private val calendarObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean) {
-            scope.launch { refreshCalendarEvents() }
+            scope.launch {
+                refreshCalendarEvents()
+                runCatching { WorkerAntWidget.refresh(this@DoomscrollBlockerService) }
+            }
         }
     }
 

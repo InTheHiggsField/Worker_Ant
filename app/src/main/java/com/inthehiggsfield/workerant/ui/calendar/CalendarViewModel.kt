@@ -104,11 +104,17 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Hide just this occurrence (e.g. this week's canceled class). The real calendar isn't changed. */
     fun hide(item: AgendaItem) {
-        viewModelScope.launch { item.instances.forEach { (id, begin) -> hiddenDao.hide(HiddenInstance(id, begin)) } }
+        viewModelScope.launch {
+            item.instances.forEach { (id, begin) -> hiddenDao.hide(HiddenInstance(id, begin)) }
+            TaskChanges.onTasksChanged(getApplication())
+        }
     }
 
     fun unhide(item: AgendaItem) {
-        viewModelScope.launch { item.instances.forEach { (id, begin) -> hiddenDao.unhide(id, begin) } }
+        viewModelScope.launch {
+            item.instances.forEach { (id, begin) -> hiddenDao.unhide(id, begin) }
+            TaskChanges.onTasksChanged(getApplication())
+        }
     }
 
     private var range: Pair<LocalDate, LocalDate>? = null

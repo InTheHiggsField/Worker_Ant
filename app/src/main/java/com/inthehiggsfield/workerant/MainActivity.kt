@@ -43,6 +43,7 @@ import com.inthehiggsfield.workerant.ui.settings.SettingsScreen
 import com.inthehiggsfield.workerant.ui.tasks.TasksScreen
 import com.inthehiggsfield.workerant.ui.theme.AppTheme
 import com.inthehiggsfield.workerant.ui.theme.ThemePrefs
+import com.inthehiggsfield.workerant.widget.WorkerAntWidget
 import com.inthehiggsfield.workerant.ui.theme.WorkerAntTheme
 
 class MainActivity : ComponentActivity() {
@@ -69,6 +70,7 @@ class MainActivity : ComponentActivity() {
                     onThemeChange = {
                         theme = it
                         ThemePrefs.save(this@MainActivity, it)
+                        lifecycleScope.launch { WorkerAntWidget.refresh(this@MainActivity) }
                     },
                 )
             }
